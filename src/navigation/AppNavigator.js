@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 
 // Screens
 import WelcomeScreen from "../screens/Onboarding/WelcomeScreen";
@@ -14,6 +15,7 @@ import MyFinances from "../screens/Finances/FinanceScreen";
 import AddObligation from "../screens/Finances/AddObligationScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import AllRemindersScreen from "../screens/Reminders/AllRemindersScreen";
+import ProfileScreen from "../screens/Settings/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,27 +60,74 @@ function MainTabs() {
 
 // Root Navigation
 export default function AppNavigator() {
+  const [initialRoute, setInitialRoute] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const onboardingData = await AsyncStorage.getItem("onboardingData");
+        if (onboardingData !== null) {
+          // Data exists, user has completed onboarding
+          setInitialRoute("Main");
+        } else {
+          // No data, user needs to complete onboarding
+          setInitialRoute("Welcome");
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load onboarding data from AsyncStorage",
+          error
+        );
+        // Fallback to Welcome screen in case of error
+        setInitialRoute("Welcome");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
+  if (isLoading) {
+    // You could render a splash screen or loading indicator here
+    return null;
+  }
+
   return (
-    <Stack.Navigator initialRouteName="Welcome">
+    <Stack.Navigator initialRouteName={initialRoute}>
       <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="SchoolSemester"
+        name="SchoolSemester" // Maintained original name
         component={SchoolSemesterScreen}
-        options={{ title: "Setup School Info" }}
+        options={{ title: "Setup Profile" }} // Updated title
       />
       <Stack.Screen
         name="Main"
         component={MainTabs}
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="Reminders" component={AllRemindersScreen} />
-      <Stack.Screen name="AddReminder" component={AddReminderScreen} />
+      <Stack.Screen
+        name="Reminders"
+        component={AllRemindersScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AddReminder"
+        component={AddReminderScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="MyFinances" component={MyFinances} />
       <Stack.Screen name="AddObligation" component={AddObligation} />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }

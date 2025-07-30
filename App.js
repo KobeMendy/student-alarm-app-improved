@@ -1,7 +1,7 @@
 /*
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './src/navigation/AppNavigator';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import AppNavigator from "./src/navigation/AppNavigator";
 
 export default function App() {
   return (
@@ -16,7 +16,9 @@ export default function App() {
 import React, { useEffect, useRef } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
-import * as Notifications from "expo-notifkications";
+import * as Notifications from "expo-notifications";
+import { ThemeProvider } from "./src/context/ThemeContext"; // Import ThemeProvider
+import { SafeAreaProvider } from "react-native-safe-area-context"; // NEW: Import SafeAreaProvider
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -46,9 +48,7 @@ export default function App() {
         console.log("Notification data:", data);
       });
 
-    // --- FIX START: Correct way to remove listeners ---
     return () => {
-      // Check if the subscription exists before trying to remove it
       if (notificationListener.current) {
         notificationListener.current.remove();
       }
@@ -56,12 +56,15 @@ export default function App() {
         responseListener.current.remove();
       }
     };
-    // --- FIX END ---
   }, []);
 
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
