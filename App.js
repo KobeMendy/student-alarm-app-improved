@@ -12,13 +12,11 @@ export default function App() {
 }
 */
 
-// App.js
 import React, { useEffect, useRef } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Notifications from "expo-notifications";
 import { ThemeProvider } from "./src/context/ThemeContext"; // Import ThemeProvider
-import { SafeAreaProvider } from "react-native-safe-area-context"; // NEW: Import SafeAreaProvider
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -59,12 +57,10 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }

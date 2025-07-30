@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// Removed useSafeAreaInsets import as it was not present in your provided code
+// If you still need status bar padding, you'll need to add useSafeAreaInsets and adjust header style inline.
 import {
   ArrowLeft,
   ChevronLeft,
@@ -297,7 +299,7 @@ export default function CalendarView() {
             style={styles.addEventButton}
             onPress={() =>
               navigation.navigate("AddReminder", {
-                reminder: { date: selectedDate.toISOString() }, // Pre-fill date
+                initialDate: selectedDate.toISOString(), // CHANGED: Pass date as initialDate
               })
             }
           >
@@ -363,7 +365,6 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   calendarGrid: {
-    // Renamed from 'calendar' to avoid confusion with react-native-calendars component
     backgroundColor: "white",
     marginBottom: 20,
   },
@@ -385,28 +386,28 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   dayCell: {
-    width: "14.28%", // 100% / 7 days
-    aspectRatio: 1, // Make cells square
+    width: "14.28%",
+    aspectRatio: 1,
     padding: 4,
     alignItems: "center",
     justifyContent: "flex-start",
     borderBottomWidth: 1,
     borderBottomColor: "#f8f9fa",
-    borderRightWidth: 1, // Add right border for grid effect
+    borderRightWidth: 1,
     borderRightColor: "#f8f9fa",
   },
   emptyDay: {
     backgroundColor: "#f8f9fa",
   },
   today: {
-    backgroundColor: "#667eea", // Blue background for today
-    borderRadius: 8, // Rounded corners for today
+    backgroundColor: "#667eea",
+    borderRadius: 8,
   },
   selectedDay: {
-    backgroundColor: "#f0f4ff", // Light blue background for selected day
+    backgroundColor: "#f0f4ff",
     borderWidth: 2,
     borderColor: "#667eea",
-    borderRadius: 8, // Rounded corners for selected day
+    borderRadius: 8,
   },
   dayNumber: {
     fontSize: 14,
@@ -427,11 +428,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 2, // Space between day number and dots
+    marginTop: 2,
   },
   eventDot: {
-    width: 5, // Slightly larger dot
-    height: 5, // Slightly larger dot
+    width: 5,
+    height: 5,
     borderRadius: 2.5,
     marginHorizontal: 1,
     marginVertical: 1,
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
   selectedDateSection: {
     backgroundColor: "white",
     padding: 20,
-    minHeight: 200, // Ensure it has some height even with no events
+    minHeight: 200,
   },
   selectedDateTitle: {
     fontSize: 18,
@@ -453,9 +454,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   eventsCountText: {
-    // New style for event count
     fontSize: 16,
-    color: "#4f46e5", // A distinct color for the count text
+    color: "#4f46e5",
     marginBottom: 16,
     fontWeight: "600",
     textAlign: "center",
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
     borderRadius: 8,
     overflow: "hidden",
-    shadowColor: "#000", // Add shadow for event cards
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
