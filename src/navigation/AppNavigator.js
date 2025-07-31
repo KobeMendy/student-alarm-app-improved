@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Screens
 import WelcomeScreen from "../screens/Onboarding/WelcomeScreen";
@@ -16,6 +16,11 @@ import AddObligation from "../screens/Finances/AddObligationScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import AllRemindersScreen from "../screens/Reminders/AllRemindersScreen";
 import ProfileScreen from "../screens/Settings/ProfileScreen";
+import ReplaceCalendarScreen from "../screens/Settings/ReplaceCalendarScreen";
+import ExportDataScreen from "../screens/DataManagement/ExportDataScreen";
+import AboutScreen from "../screens/About/AboutScreen";
+import HelpSupportScreen from "../screens/About/HelpSupportScreen";
+import PrivacyPolicyScreen from "../screens/About/PrivacyPolicyScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -68,10 +73,8 @@ export default function AppNavigator() {
       try {
         const onboardingData = await AsyncStorage.getItem("onboardingData");
         if (onboardingData !== null) {
-          // Data exists, user has completed onboarding
           setInitialRoute("Main");
         } else {
-          // No data, user needs to complete onboarding
           setInitialRoute("Welcome");
         }
       } catch (error) {
@@ -79,7 +82,6 @@ export default function AppNavigator() {
           "Failed to load onboarding data from AsyncStorage",
           error
         );
-        // Fallback to Welcome screen in case of error
         setInitialRoute("Welcome");
       } finally {
         setIsLoading(false);
@@ -90,7 +92,6 @@ export default function AppNavigator() {
   }, []);
 
   if (isLoading) {
-    // You could render a splash screen or loading indicator here
     return null;
   }
 
@@ -102,9 +103,9 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="SchoolSemester" // Maintained original name
+        name="SchoolSemester"
         component={SchoolSemesterScreen}
-        options={{ title: "Setup Profile" }} // Updated title
+        options={{ title: "Setup Profile" }}
       />
       <Stack.Screen
         name="Main"
@@ -126,6 +127,31 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ReplaceCalendar"
+        component={ReplaceCalendarScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen // NEW: Add ExportDataScreen to the root stack
+        name="ExportData"
+        component={ExportDataScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen // NEW: Add AboutScreen to the root stack
+        name="About"
+        component={AboutScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen // NEW: Add AboutScreen to the root stack
+        name="HelpSupport"
+        component={HelpSupportScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen // NEW: Add Privacy to the root stack
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

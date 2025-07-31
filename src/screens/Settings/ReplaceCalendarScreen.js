@@ -11,12 +11,20 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { lightTheme, darkTheme } from "../../constants/theme";
 
 export default function ReplaceCalendarScreen() {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const currentTheme = theme === "light" ? lightTheme : darkTheme;
+
+  const colors = {
+    background: theme === "light" ? "#f5f5f5" : "#1a1a1a",
+    cardBackground: theme === "light" ? "#fff" : "#2a2a2a",
+    text: theme === "light" ? "#333" : "#f5f5f5",
+    subText: theme === "light" ? "#666" : "#ccc",
+    border: theme === "light" ? "#eee" : "#444",
+    primary: "#667eea",
+    headerIcon: theme === "light" ? "#333" : "#f5f5f5",
+  };
 
   const reasons = [
     {
@@ -46,141 +54,137 @@ export default function ReplaceCalendarScreen() {
     },
   ];
 
-  const dynamicStyles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: currentTheme.colors.background,
-      paddingTop: Platform.OS === "android" ? 25 : 0,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 15,
-      paddingHorizontal: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: currentTheme.colors.border,
-      backgroundColor: currentTheme.colors.cardBackground,
-      width: "100%",
-      marginTop: 3,
-      height: 90,
-    },
-    backButton: {
-      paddingTop: 24, // Align with headerTitle
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      paddingTop: 24, // Align with backButton
-      color: currentTheme.colors.text,
-    },
-    placeholder: {
-      width: 24, // To balance the back button
-      paddingTop: 24,
-    },
-    scrollViewContent: {
-      paddingHorizontal: 20,
-      paddingVertical: 20,
-    },
-    sectionTitle: {
-      fontSize: 22,
-      fontWeight: "bold",
-      color: currentTheme.colors.text,
-      marginBottom: 20,
-      textAlign: "center",
-    },
-    reasonCard: {
-      backgroundColor: currentTheme.colors.cardBackground,
-      borderRadius: 12,
-      padding: 15,
-      marginBottom: 15,
-      shadowColor: currentTheme.colors.text, // Adjust shadow color for theme
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: theme === "light" ? 0.1 : 0.3, // Adjust opacity for dark mode
-      shadowRadius: 4,
-      elevation: 3,
-      borderWidth: 1,
-      borderColor: currentTheme.colors.border,
-    },
-    reasonTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: currentTheme.colors.primary, // Use primary color for titles
-      marginBottom: 8,
-    },
-    reasonDescription: {
-      fontSize: 14,
-      color: currentTheme.colors.text,
-      lineHeight: 20,
-    },
-    uploadButtonContainer: {
-      paddingTop: 20,
-      paddingBottom: 40, // More space at the bottom
-      alignItems: "center",
-    },
-    uploadButton: {
-      backgroundColor: currentTheme.colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 30,
-      borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
-      width: "80%",
-      shadowColor: currentTheme.colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 5,
-      elevation: 5,
-    },
-    uploadButtonText: {
-      color: "white",
-      fontSize: 16,
-      fontWeight: "bold",
-    },
-  });
-
   return (
-    <SafeAreaView style={dynamicStyles.safeArea}>
-      <View style={dynamicStyles.header}>
+    <SafeAreaView style={styles.safeArea(colors, Platform.OS)}>
+      <View style={styles.header(colors)}>
         <TouchableOpacity
-          style={dynamicStyles.backButton}
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons
-            name="chevron-back"
-            size={24}
-            color={currentTheme.colors.headerIcon}
-          />
+          <Ionicons name="chevron-back" size={24} color={colors.headerIcon} />
         </TouchableOpacity>
-        <Text style={dynamicStyles.headerTitle}>Replace Academic Calendar</Text>
-        <View style={dynamicStyles.placeholder} />
+        <Text style={styles.headerTitle(colors)}>
+          Replace Academic Calendar
+        </Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <ScrollView contentContainerStyle={dynamicStyles.scrollViewContent}>
-        <Text style={dynamicStyles.sectionTitle}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <Text style={styles.sectionTitle(colors)}>
           Why Replace Your Academic Calendar?
         </Text>
 
         {reasons.map((reason, index) => (
-          <View key={index} style={dynamicStyles.reasonCard}>
-            <Text style={dynamicStyles.reasonTitle}>{reason.title}</Text>
-            <Text style={dynamicStyles.reasonDescription}>
+          <View key={index} style={styles.reasonCard(colors, theme)}>
+            <Text style={styles.reasonTitle(colors)}>{reason.title}</Text>
+            <Text style={styles.reasonDescription(colors)}>
               {reason.description}
             </Text>
           </View>
         ))}
 
-        <View style={dynamicStyles.uploadButtonContainer}>
+        <View style={styles.uploadButtonContainer}>
           <TouchableOpacity
-            style={dynamicStyles.uploadButton}
-            onPress={() => navigation.navigate("UploadTab")} // Navigate to UploadCalendar
+            style={styles.uploadButton(colors)}
+            onPress={() => navigation.navigate("Main", { screen: "Upload" })}
           >
-            <Text style={dynamicStyles.uploadButtonText}>
-              Go to Upload Screen
-            </Text>
+            <Text style={styles.uploadButtonText}>Go to Upload Screen</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: (colors, platformOS) => ({
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: platformOS === "android" && 0,
+  }),
+  header: (colors) => ({
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.cardBackground,
+    width: "100%",
+    marginTop: 3,
+    height: 90,
+  }),
+  backButton: {
+    paddingTop: 24,
+  },
+  headerTitle: (colors) => ({
+    fontSize: 20,
+    fontWeight: "600",
+    paddingTop: 24,
+    color: colors.text,
+  }),
+  placeholder: {
+    width: 24,
+    paddingTop: 24,
+  },
+  scrollViewContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  sectionTitle: (colors) => ({
+    fontSize: 22,
+    fontWeight: "bold",
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: "center",
+  }),
+  reasonCard: (colors, theme) => ({
+    backgroundColor: colors.cardBackground,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme === "light" ? 0.1 : 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
+  }),
+  reasonTitle: (colors) => ({
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.primary,
+    marginBottom: 8,
+  }),
+  reasonDescription: (colors) => ({
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
+  }),
+  uploadButtonContainer: {
+    paddingTop: 20,
+    paddingBottom: 40,
+    alignItems: "center",
+  },
+  uploadButton: (colors) => ({
+    backgroundColor: colors.primary,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "80%",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  }),
+  uploadButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
