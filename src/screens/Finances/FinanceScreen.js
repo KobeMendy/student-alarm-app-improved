@@ -1,6 +1,18 @@
+// FinanceScreen.js
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
-import { useNavigation, useIsFocused } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+} from "react-native";
+import {
+  useNavigation,
+  useIsFocused,
+  useRoute,
+} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,8 +21,10 @@ import { cancelObligationNotifications } from "../../utils/notificationService";
 export default function MyFinances() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useRoute();
   const [obligations, setObligations] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);
+  const [highlightedId, setHighlightedId] = useState(null);
 
   const fetchObligations = async () => {
     try {
@@ -78,28 +92,29 @@ export default function MyFinances() {
   useEffect(() => {
     if (isFocused) {
       fetchObligations();
+      if (route.params?.highlightId) {
+        setHighlightedId(route.params.highlightId);
+        setTimeout(() => {
+          setHighlightedId(null);
+        }, 3000);
+      }
     }
-  }, [isFocused]);
+  }, [isFocused, route.params?.highlightId]);
 
   const renderItem = ({ item }) => (
     <View
-      style={{
-        backgroundColor: "#f3f4f6",
-        padding: 16,
-        borderRadius: 10,
-        marginBottom: 12,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
+      style={[
+        styles.obligationCard,
+        highlightedId === item.id && styles.highlightedCard,
+      ]}
     >
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 16, fontWeight: "600" }}>{item.title}</Text>
         <Text style={{ fontSize: 14, color: "#4b5563" }}>
-          Amount: ₦{item.amount}
+          Amount: GH₵{item.amount}
         </Text>
         <Text style={{ fontSize: 14, color: "#4b5563" }}>
-          Balance: ₦{item.balance}
+          Balance: GH₵{item.balance}
         </Text>
         <Text style={{ fontSize: 12, color: "#6b7280" }}>
           Due: {format(new Date(item.deadline), "MMM d, yyyy")}
@@ -202,3 +217,25 @@ export default function MyFinances() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  obligationCard: {
+    backgroundColor: "#f3f4f6",
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  highlightedCard: {
+    backgroundColor: "#fffbe6",
+    borderColor: "#FBC02D",
+    borderWidth: 2,
+    shadowColor: "#FBC02D",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+});

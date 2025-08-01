@@ -248,6 +248,7 @@
 //     fontStyle: "italic",
 //   },
 // });
+// HomeScreen.js
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
@@ -256,8 +257,8 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
-  Platform, // Import Platform for potential iOS/Android specific padding
-  ScrollView, // <--- THIS IS THE CRUCIAL IMPORT THAT WAS LIKELY MISSING OR OVERWRITTEN
+  Platform,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -270,57 +271,54 @@ import {
   BookOpen,
   Clock,
   Settings,
-} from "lucide-react-native"; // Import Lucide icons
+} from "lucide-react-native";
+import { format } from "date-fns";
 
 export default function HomeScreen() {
-  const [upcomingReminders, setUpcomingReminders] = useState([]); // Renamed from 'reminders' for clarity
+  const [upcomingReminders, setUpcomingReminders] = useState([]);
   const [remindersDueTodayCount, setRemindersDueTodayCount] = useState(0);
   const [remindersDueThisWeekCount, setRemindersDueThisWeekCount] = useState(0);
-  const [userBalance, setUserBalance] = useState(0); // Static for now, as per request
-  const [username, setUsername] = useState("Student"); // Default to "Student"
+  const [recentFinances, setRecentFinances] = useState([]);
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [username, setUsername] = useState("Student");
   const navigation = useNavigation();
 
-  // Function to fetch and filter reminders
   const fetchAndFilterReminders = useCallback(async () => {
     const stored = await AsyncStorage.getItem("reminders");
     const parsed = stored ? JSON.parse(stored) : [];
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Normalize 'now' to start of day for accurate date comparison
+    now.setHours(0, 0, 0, 0);
 
     const oneWeekFromNow = new Date();
     oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
-    oneWeekFromNow.setHours(23, 59, 59, 999); // Normalize to end of day for accurate comparison
+    oneWeekFromNow.setHours(23, 59, 59, 999);
 
     let dueTodayCount = 0;
     let dueThisWeekCount = 0;
 
     const validReminders = parsed.filter((item) => {
       const reminderDate = new Date(item.date);
-      reminderDate.setHours(0, 0, 0, 0); // Normalize reminder date to start of day
+      reminderDate.setHours(0, 0, 0, 0);
 
-      // Filter out reminders that are past due or completed
       const isPastDue = reminderDate.getTime() < now.getTime();
       const isCompleted = item.completed;
 
-      // Filter out special reminders if their start or end dates are not set
       const isDeemedSpecial =
         item.isSpecial && (!item.startDate || !item.endDate);
 
       if (!isPastDue && !isCompleted && !isDeemedSpecial) {
-        // Count reminders due today
         if (reminderDate.toDateString() === now.toDateString()) {
           dueTodayCount++;
         }
-        // Count reminders due this week (including today)
         if (
           reminderDate.getTime() >= now.getTime() &&
           reminderDate.getTime() <= oneWeekFromNow.getTime()
         ) {
           dueThisWeekCount++;
         }
-        return true; // Keep this reminder for the upcoming list
+        return true;
       }
-      return false; // Filter out
+      return false;
     });
 
     setRemindersDueTodayCount(dueTodayCount);
@@ -329,52 +327,77 @@ export default function HomeScreen() {
     const sortedUpcoming = validReminders.sort(
       (a, b) => new Date(a.date) - new Date(b.date)
     );
-    // Get the next five upcoming reminders
     const topFive = sortedUpcoming.slice(0, 5);
-    setUpcomingReminders(topFive); // Update state for upcoming reminders
+    setUpcomingReminders(topFive);
   }, []);
 
-  // Function to fetch username
+  const fetchRecentFinances = useCallback(async () => {
+    try {
+      const storedObligations = await AsyncStorage.getItem("obligations");
+      if (storedObligations) {
+        const parsedObligations = JSON.parse(storedObligations);
+        const sortedObligations = parsedObligations.sort(
+          (a, b) => new Date(b.deadline) - new Date(a.deadline)
+        );
+        const topThree = sortedObligations.slice(0, 3);
+        setRecentFinances(topThree);
+        const total = parsedObligations.reduce(
+          (sum, item) => sum + item.balance,
+          0
+        );
+        setTotalBalance(total);
+      } else {
+        setRecentFinances([]);
+        setTotalBalance(0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch recent finances:", error);
+    }
+  }, []);
+
   const fetchUsername = useCallback(async () => {
     try {
       const onboardingData = await AsyncStorage.getItem("onboardingData");
       if (onboardingData) {
         const parsedData = JSON.parse(onboardingData);
-        // Ensure username is a string, fallback to empty string if null/undefined
-        setUsername(parsedData.username || "Student"); // Fallback to "Student" if username is empty
+        setUsername(parsedData.username || "Student");
       } else {
-        setUsername("Student"); // Fallback if no onboarding data
+        setUsername("Student");
       }
     } catch (error) {
       console.error("Failed to load username from AsyncStorage:", error);
-      setUsername("Student"); // Fallback on error
+      setUsername("Student");
     }
   }, []);
 
-  // Use useFocusEffect to refresh data when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchAndFilterReminders();
-      fetchUsername(); // Fetch username when screen is focused
+      fetchRecentFinances();
+      fetchUsername();
 
-      const interval = setInterval(fetchAndFilterReminders, 60000); // Refresh reminders every minute
+      const interval = setInterval(() => {
+        fetchAndFilterReminders();
+        fetchRecentFinances();
+      }, 60000);
       return () => clearInterval(interval);
-    }, [fetchAndFilterReminders, fetchUsername])
+    }, [fetchAndFilterReminders, fetchRecentFinances, fetchUsername])
   );
 
-  // Handle reminder card press
   const handleReminderPress = (reminderId) => {
-    // Navigate to the Reminders screen and pass the ID to highlight
     navigation.navigate("Reminders", { highlightId: reminderId });
   };
 
-  // Helper to format time for upcoming reminders
+  const handleFinancePress = (obligationId) => {
+    navigation.navigate("MyFinances", { highlightId: obligationId });
+  };
+
   const formatTimeRemaining = (dateString) => {
     const now = new Date();
     const targetDate = new Date(dateString);
     const diffMs = targetDate.getTime() - now.getTime();
 
-    if (diffMs < 0) return "Past Due"; // Should ideally be filtered out already
+    if (diffMs < 0) return "Past Due";
 
     const diffMinutes = Math.round(diffMs / (1000 * 60));
     const diffHours = Math.round(diffMs / (1000 * 60 * 60));
@@ -393,7 +416,7 @@ export default function HomeScreen() {
 
   const renderUpcomingReminderItem = ({ item }) => (
     <TouchableOpacity
-      key={item.id} // Ensure key is here for FlatList
+      key={item.id}
       style={styles.reminderCard}
       onPress={() => handleReminderPress(item.id)}
     >
@@ -401,7 +424,7 @@ export default function HomeScreen() {
         <View
           style={[
             styles.reminderIcon,
-            item.priority === "high" && styles.reminderIconUrgent, // Use priority for urgent styling
+            item.priority === "high" && styles.reminderIconUrgent,
           ]}
         >
           <BookOpen
@@ -417,28 +440,22 @@ export default function HomeScreen() {
           </Text>
         </View>
       </View>
-      {item.priority === "high" && ( // Show alert for high priority
-        <MaterialCommunityIcons name="alert-circle" size={20} color="#ef4444" /> // Changed to MaterialCommunityIcons as AlertCircle was from lucide-react-native
+      {item.priority === "high" && (
+        <MaterialCommunityIcons name="alert-circle" size={20} color="#ef4444" />
       )}
     </TouchableOpacity>
   );
 
-  // Static data for recent finances as per request
-  const recentFinances = [
-    { id: "f1", title: "Tuition Fees", amount: -1500, type: "expense" },
-    { id: "f2", title: "Scholarship", amount: 500, type: "income" },
-  ];
-
   const renderFinanceItem = ({ item }) => (
     <TouchableOpacity
       style={styles.financeCard}
-      onPress={() => navigation.navigate("MyFinances")}
+      onPress={() => handleFinancePress(item.id)}
     >
       <View style={styles.financeLeft}>
         <View
           style={[
             styles.financeIcon,
-            item.type === "income" ? styles.incomeIcon : styles.expenseIcon,
+            item.balance > 0 ? styles.expenseIcon : styles.incomeIcon,
           ]}
         >
           <DollarSign size={16} color="white" />
@@ -448,10 +465,10 @@ export default function HomeScreen() {
       <Text
         style={[
           styles.financeAmount,
-          item.type === "income" ? styles.incomeAmount : styles.expenseAmount,
+          item.balance > 0 ? styles.expenseAmount : styles.incomeAmount,
         ]}
       >
-        {item.amount > 0 ? "+" : ""}GH₵{Math.abs(item.amount)}
+        GH₵{Math.abs(item.balance)}
       </Text>
     </TouchableOpacity>
   );
@@ -496,7 +513,7 @@ export default function HomeScreen() {
             <View style={styles.statIcon}>
               <DollarSign size={20} color="#f59e0b" />
             </View>
-            <Text style={styles.statNumber}>GH₵{userBalance}</Text>
+            <Text style={styles.statNumber}>GH₵{totalBalance}</Text>
             <Text style={styles.statLabel}>Balance</Text>
           </TouchableOpacity>
         </View>
@@ -515,7 +532,7 @@ export default function HomeScreen() {
               data={upcomingReminders}
               keyExtractor={(item) => item.id}
               renderItem={renderUpcomingReminderItem}
-              scrollEnabled={false} // Disable scrolling for this embedded FlatList
+              scrollEnabled={false}
               contentContainerStyle={styles.upcomingRemindersList}
             />
           )}
@@ -527,13 +544,17 @@ export default function HomeScreen() {
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={recentFinances}
-            keyExtractor={(item) => item.id}
-            renderItem={renderFinanceItem}
-            scrollEnabled={false} // Disable scrolling for this embedded FlatList
-            contentContainerStyle={styles.recentFinancesList}
-          />
+          {recentFinances.length === 0 ? (
+            <Text style={styles.empty}>No Recent Finances yet.</Text>
+          ) : (
+            <FlatList
+              data={recentFinances}
+              keyExtractor={(item) => item.id}
+              renderItem={renderFinanceItem}
+              scrollEnabled={false}
+              contentContainerStyle={styles.recentFinancesList}
+            />
+          )}
         </View>
         <View style={styles.quickActionsSection}>
           <TouchableOpacity
@@ -545,7 +566,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryActionButton]}
-            onPress={() => navigation.navigate("MyFinances")} // Navigates to MyFinances
+            onPress={() => navigation.navigate("AddObligation")}
           >
             <Plus size={20} color="#667eea" />
             <Text
@@ -567,30 +588,27 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#f8f9fa",
-    paddingTop: Platform.OS === "android" ? 25 : 0, // Add padding for Android status bar
+    paddingTop: Platform.OS === "android" ? 25 : 0,
   },
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
   header: {
-    paddingTop: 20, // Adjusted padding
+    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
     position: "relative",
-    flexDirection: "row", // Added for icon alignment
-    justifyContent: "space-between", // Added for icon alignment
-    alignItems: "center", // Added for icon alignment
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   greeting: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    // marginBottom: 5, // Removed as it conflicts with flex layout
   },
-  // Removed subtitle as per request
   settingsIcon: {
-    // Renamed from notificationIcon
     padding: 8,
     backgroundColor: "white",
     borderRadius: 20,
@@ -602,16 +620,16 @@ const styles = StyleSheet.create({
   },
   quickStats: {
     flexDirection: "row",
-    paddingHorizontal: 15, // Adjusted padding
+    paddingHorizontal: 15,
     marginBottom: 30,
-    justifyContent: "space-between", // Ensure even spacing
+    justifyContent: "space-between",
   },
   statCard: {
     flex: 1,
     backgroundColor: "white",
-    padding: 15, // Adjusted padding
+    padding: 15,
     borderRadius: 12,
-    marginHorizontal: 5, // Adjusted margin
+    marginHorizontal: 5,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -631,7 +649,7 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: "#666",
-    textAlign: "center", // Ensure label is centered
+    textAlign: "center",
   },
   section: {
     paddingHorizontal: 20,
@@ -741,11 +759,10 @@ const styles = StyleSheet.create({
     color: "#ef4444",
   },
   quickActionsSection: {
-    // Renamed from quickActions to avoid conflict with old style
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingBottom: 30,
-    justifyContent: "space-between", // Added for spacing
+    justifyContent: "space-between",
   },
   actionButton: {
     flex: 1,
@@ -758,33 +775,26 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   secondaryActionButton: {
-    // Renamed from secondaryAction
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#667eea",
   },
   actionButtonText: {
-    // Renamed from actionText to avoid conflict
     color: "white",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
   },
   secondaryActionButtonText: {
-    // Renamed from secondaryActionText
     color: "#667eea",
   },
-  upcomingRemindersList: {
-    // Add any specific styles for the FlatList content here if needed
-  },
-  recentFinancesList: {
-    // Add any specific styles for the FlatList content here if needed
-  },
+  upcomingRemindersList: {},
+  recentFinancesList: {},
   empty: {
     fontSize: 14,
     color: "#9ca3af",
     fontStyle: "italic",
-    textAlign: "center", // Center the empty message
+    textAlign: "center",
     marginTop: 10,
   },
 });
