@@ -21,6 +21,7 @@ import ExportDataScreen from "../screens/DataManagement/ExportDataScreen";
 import AboutScreen from "../screens/About/AboutScreen";
 import HelpSupportScreen from "../screens/About/HelpSupportScreen";
 import PrivacyPolicyScreen from "../screens/About/PrivacyPolicyScreen";
+import UpdateObligationScreen from "../screens/Finances/UpdateObligationScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -152,6 +153,11 @@ export default function AppNavigator() {
       <Stack.Screen // NEW: Add Privacy to the root stack
         name="PrivacyPolicy"
         component={PrivacyPolicyScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen // NEW: Add Privacy to the root stack
+        name="UpdateObligation"
+        component={UpdateObligationScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
